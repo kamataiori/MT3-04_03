@@ -64,6 +64,10 @@ void Result::Draw()
 	DrawSphere({ ball.position, ball.radius }, viewMatrixProjectionMatrix, viewportMatrix, ball.color);
 	Novice::DrawLine((int)screenBall.x, (int)screenBall.y, (int)screenSpring.x, (int)screenSpring.y, WHITE);*/
 
+	screenBall = Transform(Transform(ball.position, viewMatrixProjectionMatrix), viewportMatrix);
+	screenSpring = Transform(Transform(spring.anchor, viewMatrixProjectionMatrix), viewportMatrix);
+	Novice::DrawLine((int)screenBall.x, (int)screenBall.y, (int)screenSpring.x, (int)screenSpring.y, WHITE);
+
 	DrawSphere({ position,sphere.radius }, viewProjectionMatrix, viewportMatrix, sphere.color);
 
 
