@@ -2,73 +2,74 @@
 
 void Result::Initialize()
 {
-	position = { -0.90f,0.3f,0.0f, };
-	angle = 0.0f;
-	deltaTime = 0.0f;
-
-	ball.position = { 1.2f, 0.0f, 0.0f };
-	ball.mass = 2.0f;
-	ball.radius = 0.05f;
-	ball.color = BLUE;
-
-	spring.anchor = { 0.0f, 0.0f, 0.0f };
-	spring.naturalLength = 1.0f;
-	spring.stiffness = 100.0f;
-	spring.dampingCoefficient = 2.0f;
-
-	cameraRotate = { 0.0f,0.0f,0.0f };
-
-	cameraTranslate = { 0.0f,0.0f,0.0f };
-	cameraPosition = SphericalToCartesian(radius, theta, phi);
-	cameraTarget = { 0.0f, 0.0f, 0.0f };
-	cameraUp = { 0.0f, 1.0f, 0.0f };
-
-	viewMatrix = MakeLookAtMatrix4x4(cameraPosition, cameraTarget, cameraUp);
-	worldMatrix = MakeAffineMatrix({ 1.0f,1.0f,1.0f }, cameraRotate, cameraTranslate);
-	projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(kWindowWidth) / float(kWindowHeight), 0.1f, 100.0f);
-	worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
-	viewProjectionMatrix = Multiply(viewMatrix, projectionMatrix);
-	viewportMatrix = MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
-	viewMatrixProjectionMatrix = Multiply(viewMatrix, projectionMatrix);
+	
 
 }
 
 void Result::Update()
 {
-	ImGui::Begin("start");
-	if (ImGui::Button("Start"))
-	{
-		start = true;
-	}
-	ImGui::End();
-	if (start)
+
+	if (isStart)
 	{
 		conicalPendulum.angularVelocity = std::sqrt(9.8f / (conicalPendulum.length * std::cos(conicalPendulum.halfApexAngle)));
-		conicalPendulum.angle += conicalPendulum.angularVelocity * deltaTime;
-
-		float aradius = std::sin(conicalPendulum.halfApexAngle) * conicalPendulum.length;
-		float height = std::cos(conicalPendulum.halfApexAngle) * conicalPendulum.length;
-		sphere.center.x = conicalPendulum.anchor.x + std::cos(conicalPendulum.angle) * aradius;
-		sphere.center.y = conicalPendulum.anchor.y - height;
-		sphere.center.z = conicalPendulum.anchor.z - std::sin(conicalPendulum.angle) * aradius;
 	}
-	
+	else
+	{
+		conicalPendulum =
+		{
+			{0,1.0f,0},
+			0.8f,
+			0.7f,
+			0,
+			0
+		};
+
+		sphere.center = conicalPendulum.anchor;
+	}
+	conicalPendulum.angle = conicalPendulum.angle + conicalPendulum.angularVelocity * deltaTime;
+
+	float radius = std::sin(conicalPendulum.halfApexAngle) * conicalPendulum.length;
+	float height = std::cos(conicalPendulum.halfApexAngle) * conicalPendulum.length;
+	sphere.center.x = conicalPendulum.anchor.x + std::cos(conicalPendulum.angle) * radius;
+	sphere.center.y = conicalPendulum.anchor.y - height;
+	sphere.center.z = conicalPendulum.anchor.z - std::sin(conicalPendulum.angle) * radius;
+
+	linePoint[0] = Transform(Transform({ 0,1.2f,0 }, viewProjectionMatrix), viewportMatrix);
+	linePoint[1] = Transform(Transform(sphere.center, viewProjectionMatrix), viewportMatrix);
+
+
+	ImGui::Begin("window");
+
+
+	ImGui::Text("camera");
+	ImGui::DragFloat3("CameraRotate", &cameraRotate.x, 0.01f);
+
+	ImGui::Text("setting");
+
+	if (ImGui::Button("start"))
+	{
+		if (!isStart)
+		{
+			isStart = true;
+		}
+		else
+		{
+			isStart = false;
+		}
+	}
+
+
+	ImGui::End();
 }
 
 void Result::Draw()
 {
-	/*DrawGrid(viewMatrixProjectionMatrix, viewportMatrix);
-	screenBall = Transform(Transform(ball.position, viewMatrixProjectionMatrix), viewportMatrix);
-	screenSpring = Transform(Transform(spring.anchor, viewMatrixProjectionMatrix), viewportMatrix);
-	Transform(spring.anchor, worldViewProjectionMatrix);
-	DrawSphere({ ball.position, ball.radius }, viewMatrixProjectionMatrix, viewportMatrix, ball.color);
-	Novice::DrawLine((int)screenBall.x, (int)screenBall.y, (int)screenSpring.x, (int)screenSpring.y, WHITE);*/
+	
+	//Novice::DrawLine((int)screenBall.x, (int)screenBall.y, (int)screenSpring.x, (int)screenSpring.y, WHITE);
 
-	screenBall = Transform(Transform(ball.position, viewMatrixProjectionMatrix), viewportMatrix);
-	screenSpring = Transform(Transform(spring.anchor, viewMatrixProjectionMatrix), viewportMatrix);
-	Novice::DrawLine((int)screenBall.x, (int)screenBall.y, (int)screenSpring.x, (int)screenSpring.y, WHITE);
-
-	DrawSphere({ position,sphere.radius }, viewProjectionMatrix, viewportMatrix, sphere.color);
+	//DrawGrid(viewProjectionMatrix, viewportMatrix);
+	DrawSphere(sphere, viewProjectionMatrix, viewportMatrix, color);
+	Novice::DrawLine((int)linePoint[0].x, (int)linePoint[0].y, (int)linePoint[1].x, (int)linePoint[1].y, color);
 
 
 	DrawGrid(viewProjectionMatrix, viewportMatrix);
